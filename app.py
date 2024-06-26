@@ -92,28 +92,28 @@ def generate_output(input_text):
 
     return final_output, detected_classes
 
-# Function to call the external API with error handling
+# Function to call the external API with streaming and error handling
 def call_external_api(input_text):
-    url = "https://llm.thanks-boss.com/ollama"
+    url = 'https://llm.thanks-boss.com/ollama'
     headers = {
-        "x-api-key": "thanks-boss-team-test",
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json',
+        'x-api-key': 'thanks-boss-team-test'
     }
-    payload = {
-        "input_text": [
-            {
-                "role": "assistant",
-                "content": input_text
-            }
-        ]
-    }
+    data = {'input_text': input_text}
+    
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=data, stream=True)
         response.raise_for_status()  # Raise an error for bad status codes
-        return response.json()
+
+        api_response = ""
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    api_response += line.decode('utf-8') + "\n"
+        return api_response.strip()
     except requests.exceptions.RequestException as e:
         logging.error(f"Error calling external API: {e}")
-        return {"error": str(e)}
+        return f"Error: {str(e)}"
 
 # Load models and vectorizers
 model_vectorizer_paths = [
